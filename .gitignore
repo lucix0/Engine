@@ -4,6 +4,7 @@
 .DS_Store
 
 cmake-build*
+.idea*
 
 # User-specific stuff
 .idea/**/workspace.xml
