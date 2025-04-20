@@ -3,15 +3,39 @@
 #include <fstream>
 #include <iostream>
 
-bgfx::ShaderHandle loadShader(const std::string& shaderPath) {
-    std::ifstream shaderFile;
-    shaderFile.open(shaderPath, std::ios::in | std::ios::binary | std::ios::ate);
+bgfx::ShaderHandle loadShader(const std::string& shaderName) {
+    // Location of shaders.
+    std::string path = "shaders/bin/";
 
-    if (!shaderFile.is_open()) {
-        std::cerr << "Error opening file " << shaderPath << std::endl;
+    // Choose subfolder depending on renderer.
+    switch (bgfx::getRendererType()) {
+        case bgfx::RendererType::Noop:
+        case bgfx::RendererType::Direct3D11:
+        case bgfx::RendererType::Direct3D12: path.append("dx11/");  break;
+        case bgfx::RendererType::Agc:
+        case bgfx::RendererType::Gnm:        std::cerr << "Error: Gnm is not supported." << std::endl;  break;
+        case bgfx::RendererType::Metal:      path.append("metal/"); break;
+        case bgfx::RendererType::Nvn:        std::cerr << "Error: Nvn is not supported." << std::endl;   break;
+        case bgfx::RendererType::OpenGL:     std::cerr << "Error: OpenGL is not supported." << std::endl;  break;
+        case bgfx::RendererType::OpenGLES:   std::cerr << "Error: OpenGLES is not supported." << std::endl;  break;
+        case bgfx::RendererType::Vulkan:     path.append("spirv/"); break;
+
+        case bgfx::RendererType::Count:
+            std::cerr << "Error: Unknown Renderer" << std::endl;
+            break;
     }
 
-    std::streampos fileSize = shaderFile.tellg();
+    // Finally, append the specific shader name.
+    path.append(shaderName);
+
+    std::ifstream shaderFile;
+    shaderFile.open(path, std::ios::in | std::ios::binary | std::ios::ate);
+
+    if (!shaderFile.is_open()) {
+        std::cerr << "Error opening file " << path << std::endl;
+    }
+
+    const std::streampos fileSize = shaderFile.tellg();
     auto* memblock = new char[fileSize];
     shaderFile.seekg(0, std::ios::beg);
     shaderFile.read(memblock, fileSize);
@@ -27,7 +51,7 @@ bgfx::ShaderHandle loadShader(const std::string& shaderPath) {
 bgfx::ProgramHandle loadProgram(const std::string& vsPath, const std::string& fsPath) {
     const auto vsh = loadShader(vsPath);
     const auto fsh = loadShader(fsPath);
-    auto program = bgfx::createProgram(vsh, fsh);
+    const auto program = bgfx::createProgram(vsh, fsh);
 
     bgfx::destroy(vsh);
     bgfx::destroy(fsh);
