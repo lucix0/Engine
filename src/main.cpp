@@ -90,7 +90,7 @@ int main(int argc, char **argv)
 		return 1;
 
 	// Set view 0 to the same dimensions as the window and to clear the color buffer.
-	const bgfx::ViewId kClearView = 0;
+	constexpr bgfx::ViewId kClearView = 0;
 	bgfx::setViewClear(kClearView, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0xff00ff00);
 	bgfx::setViewRect(kClearView, 0, 0, bgfx::BackbufferRatio::Equal);
 
@@ -102,19 +102,19 @@ int main(int argc, char **argv)
 		.add(bgfx::Attrib::Color0, 4, bgfx::AttribType::Uint8, true)
 		.end();
 
-	bgfx::VertexBufferHandle vb = bgfx::createVertexBuffer(
+	const bgfx::VertexBufferHandle vb = bgfx::createVertexBuffer(
 		bgfx::makeRef(cubeVertices, sizeof(cubeVertices)),
 		layout
 	);
 
-	bgfx::IndexBufferHandle ib = bgfx::createIndexBuffer(
+	const bgfx::IndexBufferHandle ib = bgfx::createIndexBuffer(
 		bgfx::makeRef(cubeTriList, sizeof(cubeTriList))
 	);
 
 	// Create Shader Program here...
-	auto shaderProgramHandle = loadProgram("shaders/bin/vs_metal.bin", "shaders/bin/fs_metal.bin");
+	const auto shaderProgramHandle = loadProgram("vs.bin", "fs.bin");
 
-	auto timeOffset = bx::getHPCounter();
+	const auto timeOffset = bx::getHPCounter();
 
 	while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
@@ -127,7 +127,7 @@ int main(int argc, char **argv)
 			bgfx::setViewRect(kClearView, 0, 0, bgfx::BackbufferRatio::Equal);
 		}
 
-		auto time = static_cast<float>((bx::getHPCounter()-timeOffset)/static_cast<double>(bx::getHPFrequency()));
+		const auto time = static_cast<float>((bx::getHPCounter()-timeOffset)/static_cast<double>(bx::getHPFrequency()));
 
 		const bx::Vec3 at = { 0.0f, 0.0f, 0.0f };
 		const bx::Vec3 eye = { 0.0f, 0.0f, -35.0f };

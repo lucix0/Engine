@@ -13,11 +13,11 @@ bgfx::ShaderHandle loadShader(const std::string& shaderName) {
         case bgfx::RendererType::Direct3D11:
         case bgfx::RendererType::Direct3D12: path.append("dx11/");  break;
         case bgfx::RendererType::Agc:
-        case bgfx::RendererType::Gnm:        path.append("pssl/");  break;
+        case bgfx::RendererType::Gnm:        std::cerr << "Error: Gnm is not supported." << std::endl;  break;
         case bgfx::RendererType::Metal:      path.append("metal/"); break;
-        case bgfx::RendererType::Nvn:        path.append("nvn/");   break;
-        case bgfx::RendererType::OpenGL:     path.append("glsl/");  break;
-        case bgfx::RendererType::OpenGLES:   path.append("essl/");  break;
+        case bgfx::RendererType::Nvn:        std::cerr << "Error: Nvn is not supported." << std::endl;   break;
+        case bgfx::RendererType::OpenGL:     std::cerr << "Error: OpenGL is not supported." << std::endl;  break;
+        case bgfx::RendererType::OpenGLES:   std::cerr << "Error: OpenGLES is not supported." << std::endl;  break;
         case bgfx::RendererType::Vulkan:     path.append("spirv/"); break;
 
         case bgfx::RendererType::Count:
