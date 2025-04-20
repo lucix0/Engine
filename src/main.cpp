@@ -12,7 +12,7 @@
 #endif
 #include <GLFW/glfw3native.h>
 
-#include "util.h"
+#include "util.hpp"
 #include "bx/math.h"
 #include "bx/timer.h"
 
