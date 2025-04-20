@@ -6,9 +6,13 @@ set(CMAKE_CXX_STANDARD 23)
 add_subdirectory(glfw)
 add_subdirectory(bgfx.cmake)
 
-add_executable(Engine main.cpp)
+include_directories(include)
 
-# Link glfw3 library
+add_executable(Engine
+        src/main.cpp
+        src/util.cpp
+)
+
 target_link_libraries(Engine PRIVATE glfw bgfx bimg bx)
 
 target_compile_definitions(Engine PRIVATE BX_CONFIG_DEBUG=0)
