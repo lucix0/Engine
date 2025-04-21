@@ -7,7 +7,7 @@ add_subdirectory(glfw)
 add_subdirectory(bgfx.cmake)
 add_subdirectory(assimp)
 
-include_directories(include)
+include_directories(include assimp/include)
 
 add_executable(Engine
         src/main.cpp
@@ -17,6 +17,6 @@ add_executable(Engine
         include/mesh.hpp
 )
 
-target_link_libraries(Engine PRIVATE glfw bgfx bimg bx)
+target_link_libraries(Engine PRIVATE glfw bgfx bimg bx assimp)
 
 target_compile_definitions(Engine PRIVATE BX_CONFIG_DEBUG=0)

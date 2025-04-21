@@ -13,39 +13,10 @@
 #include <GLFW/glfw3native.h>
 
 #include "util.hpp"
+#include "mesh.hpp"
+
 #include "bx/math.h"
 #include "bx/timer.h"
-
-struct Vertex {
-	float x, y, z;
-	uint32_t color;
-};
-
-static Vertex cubeVertices[] = {
-	{-1.0f,  1.0f,  1.0f, 0x00000000, },
-	{ 1.0f,  1.0f,  1.0f, 0xff000000, },
-	{-1.0f, -1.0f,  1.0f, 0x00ff0000, },
-	{ 1.0f, -1.0f,  1.0f, 0x0000ff00, },
-	{-1.0f,  1.0f, -1.0f, 0x000000ff, },
-	{ 1.0f,  1.0f, -1.0f, 0xffff0000, },
-	{-1.0f, -1.0f, -1.0f, 0x0000ffff, },
-	{ 1.0f, -1.0f, -1.0f, 0xffffffff, },
-};
-
-static const uint16_t cubeTriList[] = {
-	0, 1, 2, // 0
-	1, 3, 2,
-	4, 6, 5, // 2
-	5, 6, 7,
-	0, 2, 4, // 4
-	4, 2, 6,
-	1, 5, 3, // 6
-	5, 7, 3,
-	0, 4, 1, // 8
-	4, 5, 1,
-	2, 3, 6, // 10
-	6, 3, 7,
-};
 
 static void glfw_errorCallback(int error, const char *description) {
 	fprintf(stderr, "GLFW error %d: %s\n", error, description);
@@ -102,14 +73,27 @@ int main(int argc, char **argv)
 		.add(bgfx::Attrib::Color0, 4, bgfx::AttribType::Uint8, true)
 		.end();
 
-	const bgfx::VertexBufferHandle vb = bgfx::createVertexBuffer(
-		bgfx::makeRef(cubeVertices, sizeof(cubeVertices)),
-		layout
-	);
+	// Load model.
+	Model testModel;
+	testModel.loadFromFile("spider.obj");
 
-	const bgfx::IndexBufferHandle ib = bgfx::createIndexBuffer(
-		bgfx::makeRef(cubeTriList, sizeof(cubeTriList))
-	);
+	// Create vb and ib for each individual mesh in model.
+	std::vector<bgfx::VertexBufferHandle> vbs;
+	std::vector<bgfx::IndexBufferHandle> ibs;
+	for (int i = 0; i < testModel.meshes.size(); i++) {
+		vbs.push_back(
+			bgfx::createVertexBuffer(
+				bgfx::makeRef(testModel.meshes[i].vertexList.data(), 16*testModel.meshes[i].vertexList.size()),
+				layout
+			)
+		);
+
+		ibs.push_back(
+			bgfx::createIndexBuffer(
+				bgfx::makeRef(testModel.meshes[i].indexList.data(), 2*testModel.meshes[i].indexList.size())
+			)
+		);
+	}
 
 	// Create Shader Program here...
 	const auto shaderProgramHandle = loadProgram("vs.bin", "fs.bin");
@@ -130,38 +114,45 @@ int main(int argc, char **argv)
 		const auto time = static_cast<float>((bx::getHPCounter()-timeOffset)/static_cast<double>(bx::getHPFrequency()));
 
 		const bx::Vec3 at = { 0.0f, 0.0f, 0.0f };
-		const bx::Vec3 eye = { 0.0f, 0.0f, -35.0f };
+		const bx::Vec3 eye = { 0.0f, 0.0f, -500.0f };
 
 		{
 			float view[16];
 			bx::mtxLookAt(view, eye, at);
 
 			float proj[16];
-			bx::mtxProj(proj, 60.0f, static_cast<float>(width)/static_cast<float>(height), 0.1f, 100.0f, bgfx::getCaps()->homogeneousDepth);
+			bx::mtxProj(proj, 60.0f, static_cast<float>(width)/static_cast<float>(height), 0.1f, 10000.0f, bgfx::getCaps()->homogeneousDepth);
 			bgfx::setViewTransform(kClearView, view, proj);
 
 			// Set view 0 default viewport.
 			bgfx::setViewRect(kClearView, 0, 0, static_cast<uint16_t>(width), static_cast<uint16_t>(height));
 		}
 
-		float mtx[16];
-		bx::mtxRotateXY(mtx,  time + 0.21f, time + 0.37f);
+		bx::mtxRotateXYZ(testModel.modelMatrix.data(),  time + 0.21f, time + 0.37f, time + 0.50f);
 
-		bgfx::setTransform(mtx);
+		for (int i = 0; i < vbs.size(); i++) {
+			bgfx::setTransform(testModel.modelMatrix.data());
 
-		bgfx::setVertexBuffer(0, vb);
-		bgfx::setIndexBuffer(ib);
+			bgfx::setVertexBuffer(0, vbs[i]);
+			bgfx::setIndexBuffer(ibs[i]);
 
-		bgfx::setState(BGFX_STATE_DEFAULT);
-
-		bgfx::submit(kClearView, shaderProgramHandle, 0);
+			bgfx::setState(BGFX_STATE_DEFAULT);
+			bgfx::submit(kClearView, shaderProgramHandle, 0);
+		}
 
 		// Advance to next frame. Process submitted rendering primitives.
 		bgfx::frame();
 	}
 
-	bgfx::destroy(vb);
-	bgfx::destroy(ib);
+	// Clean up.
+	for (auto vb: vbs) {
+		bgfx::destroy(vb);
+	}
+
+	for (auto ib: ibs) {
+		bgfx::destroy(ib);
+	}
+
 	bgfx::destroy(shaderProgramHandle);
 
 	bgfx::shutdown();
