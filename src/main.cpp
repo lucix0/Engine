@@ -1,161 +1,254 @@
+#include <iostream>
 #include <stdio.h>
-#include <bx/bx.h>
-#include <bgfx/bgfx.h>
-#include <bgfx/platform.h>
+
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#if BX_PLATFORM_LINUX
-#define GLFW_EXPOSE_NATIVE_X11
-#elif BX_PLATFORM_WINDOWS
-#define GLFW_EXPOSE_NATIVE_WIN32
-#elif BX_PLATFORM_OSX
-#define GLFW_EXPOSE_NATIVE_COCOA
-#endif
-#include <GLFW/glfw3native.h>
 
-#include "util.hpp"
-#include "mesh.hpp"
+#include <glm/vec3.hpp>
+#include <glm/mat4x4.hpp>
+#include <glm/trigonometric.hpp>
+#include <glm/ext/matrix_transform.hpp>
+#include <glm/ext/matrix_clip_space.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
-#include "bx/math.h"
-#include "bx/timer.h"
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
 
-static void glfw_errorCallback(int error, const char *description) {
+#include "shader.hpp"
+#include "camera.hpp"
+
+void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+void mouse_callback(GLFWwindow* window, double xposIn, double yposIn);
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
+void processInput(GLFWwindow* window);
+static void glfw_errorCallback(int error, const char* description);
+
+void GLAPIENTRY
+MessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam);
+
+const unsigned int SCR_WIDTH = 1280;
+const unsigned int SCR_HEIGHT = 720;
+
+Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+float lastX = SCR_WIDTH / 2.0f;
+float lastY = SCR_HEIGHT / 2.0f;
+bool firstMouse = true;
+
+float deltaTime = 0.0f;
+float lastFrame = 0.0f;
+
+int main(int argc, char **argv) {
+	// Initialize GLFW.
+	glfwInit();
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
+
+	// Create window.
+	GLFWwindow *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Engine", nullptr, nullptr);
+	if (!window)
+		return 1;
+
+	glfwMakeContextCurrent(window);
+	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+	glfwSetCursorPosCallback(window, mouse_callback);
+	glfwSetScrollCallback(window, scroll_callback);
+	glfwSetErrorCallback(glfw_errorCallback);
+
+	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+		std::cout << "Failed to initialize GLAD" << std::endl;
+		return -1;
+	}
+
+	glfwSwapInterval(1);
+
+	glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+
+	// GL error handling.
+	glEnable(GL_DEBUG_OUTPUT);
+	glDebugMessageCallback(MessageCallback, 0);
+
+	glEnable(GL_DEPTH_TEST);
+
+	Shader testShader("shaders/vs.shader", "shaders/fs.shader");
+	testShader.use();
+
+	float vertices[] = {
+		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+		-0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+		-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+	};
+
+	unsigned int VBO, VAO;
+	glGenVertexArrays(1, &VAO);
+	glGenBuffers(1, &VBO);
+	// bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
+	glBindVertexArray(VAO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+	// position attribute
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+	// texcoord attribute
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(1);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	stbi_set_flip_vertically_on_load(true);
+
+	int width, height, nrChannels;
+	unsigned char* data = stbi_load("resources/textures/wall.jpg", &width, &height, &nrChannels, 0);
+
+	unsigned int texture;
+	glGenTextures(1, &texture);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, texture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+	glGenerateMipmap(GL_TEXTURE_2D);
+
+	stbi_image_free(data);
+
+	while (!glfwWindowShouldClose(window)) {
+		float currentFrame = static_cast<float>(glfwGetTime());
+		deltaTime = currentFrame - lastFrame;
+		lastFrame = currentFrame;
+
+		processInput(window);
+
+		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, texture);
+
+		testShader.use();
+
+		glm::mat4 model = glm::mat4(1.0f);
+		testShader.setMat4("model", model);
+
+		glm::mat4 view = camera.GetViewMatrix();
+		testShader.setMat4("view", view);
+
+		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+		testShader.setMat4("projection", projection);
+		
+		glBindVertexArray(VAO);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+
+		glfwSwapBuffers(window);
+		glfwPollEvents();
+	}
+
+	glDeleteVertexArrays(1, &VAO);
+	glDeleteBuffers(1, &VBO);
+
+	glfwTerminate();
+	return 0;
+}
+
+static void glfw_errorCallback(int error, const char* description) {
 	fprintf(stderr, "GLFW error %d: %s\n", error, description);
 }
 
-static void glfw_keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {  }
-
-int main(int argc, char **argv)
+void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
-	// Create a GLFW window without an OpenGL context.
-	glfwSetErrorCallback(glfw_errorCallback);
-	if (!glfwInit())
-		return 1;
-	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-	GLFWwindow *window = glfwCreateWindow(1024, 768, "Engine", nullptr, nullptr);
-	if (!window)
-		return 1;
-	glfwSetKeyCallback(window, glfw_keyCallback);
+	glViewport(0, 0, width, height);
+}
 
-	// Call bgfx::renderFrame before bgfx::init to signal to bgfx not to create a render thread.
-	// Most graphics APIs must be used on the same thread that created the window.
-	bgfx::renderFrame();
-	// Initialize bgfx using the native window handle and window resolution.
-	bgfx::Init init;
+void mouse_callback(GLFWwindow* window, double xposIn, double yposIn) {
+	float xpos = static_cast<float>(xposIn);
+	float ypos = static_cast<float>(yposIn);
 
-#if BX_PLATFORM_LINUX || BX_PLATFORM_BSD
-	init.platformData.ndt = glfwGetX11Display();
-	init.platformData.nwh = (void*)(uintptr_t)glfwGetX11Window(window);
-#elif BX_PLATFORM_OSX
-	init.platformData.nwh = glfwGetCocoaWindow(window);
-#elif BX_PLATFORM_WINDOWS
-	init.platformData.nwh = glfwGetWin32Window(window);
-#endif
-
-	int width, height;
-	glfwGetWindowSize(window, &width, &height);
-	init.resolution.width = static_cast<uint32_t>(width);
-	init.resolution.height = static_cast<uint32_t>(height);
-	init.resolution.reset = BGFX_RESET_VSYNC;
-
-	if (!bgfx::init(init))
-		return 1;
-
-	// Set view 0 to the same dimensions as the window and to clear the color buffer.
-	constexpr bgfx::ViewId kClearView = 0;
-	bgfx::setViewClear(kClearView, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0xff00ff00);
-	bgfx::setViewRect(kClearView, 0, 0, bgfx::BackbufferRatio::Equal);
-
-	// Create vertex layout.
-	bgfx::VertexLayout layout;
-	layout
-		.begin()
-		.add(bgfx::Attrib::Position, 3, bgfx::AttribType::Float)
-		.add(bgfx::Attrib::Color0, 4, bgfx::AttribType::Uint8, true)
-		.end();
-
-	// Load model.
-	Model testModel;
-	testModel.loadFromFile("spider.obj");
-
-	// Create vb and ib for each individual mesh in model.
-	std::vector<bgfx::VertexBufferHandle> vbs;
-	std::vector<bgfx::IndexBufferHandle> ibs;
-	for (int i = 0; i < testModel.meshes.size(); i++) {
-		vbs.push_back(
-			bgfx::createVertexBuffer(
-				bgfx::makeRef(testModel.meshes[i].vertexList.data(), 16*testModel.meshes[i].vertexList.size()),
-				layout
-			)
-		);
-
-		ibs.push_back(
-			bgfx::createIndexBuffer(
-				bgfx::makeRef(testModel.meshes[i].indexList.data(), 2*testModel.meshes[i].indexList.size())
-			)
-		);
+	if (firstMouse)
+	{
+		lastX = xpos;
+		lastY = ypos;
+		firstMouse = false;
 	}
 
-	// Create Shader Program here...
-	const auto shaderProgramHandle = loadProgram("vs.bin", "fs.bin");
+	float xoffset = xpos - lastX;
+	float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
 
-	const auto timeOffset = bx::getHPCounter();
+	lastX = xpos;
+	lastY = ypos;
 
-	while (!glfwWindowShouldClose(window)) {
-		glfwPollEvents();
+	camera.ProcessMouseMovement(xoffset, yoffset);
+}
 
-		// Handle window resize.
-		int oldWidth = width, oldHeight = height;
-		glfwGetWindowSize(window, &width, &height);
-		if (width != oldWidth || height != oldHeight) {
-			bgfx::reset(static_cast<uint32_t>(width), static_cast<uint32_t>(height), BGFX_RESET_VSYNC);
-			bgfx::setViewRect(kClearView, 0, 0, bgfx::BackbufferRatio::Equal);
-		}
+void GLAPIENTRY
+MessageCallback(GLenum source,
+	GLenum type,
+	GLuint id,
+	GLenum severity,
+	GLsizei length,
+	const GLchar* message,
+	const void* userParam)
+{
+	fprintf(stderr, "GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n",
+		(type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""),
+		type, severity, message);
+}
 
-		const auto time = static_cast<float>((bx::getHPCounter()-timeOffset)/static_cast<double>(bx::getHPFrequency()));
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
+	camera.ProcessMouseScroll(static_cast<float>(yoffset));
+}
 
-		const bx::Vec3 at = { 0.0f, 0.0f, 0.0f };
-		const bx::Vec3 eye = { 0.0f, 0.0f, -500.0f };
+void processInput(GLFWwindow* window)
+{
+	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+		glfwSetWindowShouldClose(window, true);
 
-		{
-			float view[16];
-			bx::mtxLookAt(view, eye, at);
-
-			float proj[16];
-			bx::mtxProj(proj, 60.0f, static_cast<float>(width)/static_cast<float>(height), 0.1f, 10000.0f, bgfx::getCaps()->homogeneousDepth);
-			bgfx::setViewTransform(kClearView, view, proj);
-
-			// Set view 0 default viewport.
-			bgfx::setViewRect(kClearView, 0, 0, static_cast<uint16_t>(width), static_cast<uint16_t>(height));
-		}
-
-		bx::mtxRotateXYZ(testModel.modelMatrix.data(),  time + 0.21f, time + 0.37f, time + 0.50f);
-
-		for (int i = 0; i < vbs.size(); i++) {
-			bgfx::setTransform(testModel.modelMatrix.data());
-
-			bgfx::setVertexBuffer(0, vbs[i]);
-			bgfx::setIndexBuffer(ibs[i]);
-
-			bgfx::setState(BGFX_STATE_DEFAULT);
-			bgfx::submit(kClearView, shaderProgramHandle, 0);
-		}
-
-		// Advance to next frame. Process submitted rendering primitives.
-		bgfx::frame();
-	}
-
-	// Clean up.
-	for (auto vb: vbs) {
-		bgfx::destroy(vb);
-	}
-
-	for (auto ib: ibs) {
-		bgfx::destroy(ib);
-	}
-
-	bgfx::destroy(shaderProgramHandle);
-
-	bgfx::shutdown();
-	glfwTerminate();
-	return 0;
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+		camera.ProcessKeyboard(FORWARD, deltaTime);
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+		camera.ProcessKeyboard(BACKWARD, deltaTime);
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+		camera.ProcessKeyboard(LEFT, deltaTime);
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+		camera.ProcessKeyboard(RIGHT, deltaTime);
 }

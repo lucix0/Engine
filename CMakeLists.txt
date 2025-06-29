@@ -4,19 +4,14 @@ project(Engine)
 set(CMAKE_CXX_STANDARD 23)
 
 add_subdirectory(glfw)
-add_subdirectory(bgfx.cmake)
 add_subdirectory(assimp)
 
 include_directories(include assimp/include)
 
 add_executable(Engine
+        src/glad.c
         src/main.cpp
-        src/util.cpp
-        src/mesh.cpp
-        include/util.hpp
-        include/mesh.hpp
-)
+        src/shader.cpp
+ "src/camera.cpp")
 
-target_link_libraries(Engine PRIVATE glfw bgfx bimg bx assimp)
-
-target_compile_definitions(Engine PRIVATE BX_CONFIG_DEBUG=0)
+target_link_libraries(Engine PRIVATE glfw assimp)
