@@ -9,12 +9,11 @@ namespace Engine {
 	}
 
 	void Editor::Run() {
-		m_CreateGLWindow();
+		
 	}
 
-	void Editor::m_CreateGLWindow() {
-		
-		
+	void Editor::m_LogicLoop() {
+
 	}
 
 	void Editor::m_RenderLoop() {

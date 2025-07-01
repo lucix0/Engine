@@ -1,5 +1,5 @@
 #pragma once
-#include <glfw/glfw3.h>
+#include "window.hpp"
 
 namespace Engine {
 	class Editor {
@@ -9,9 +9,9 @@ namespace Engine {
 
 		void Run();
 	private:
-		GLFWwindow* m_Window;
+		GLWindow m_Window;
 
-		void m_CreateGLWindow();
+		void m_LogicLoop();
 		void m_RenderLoop();
 	};
 }
