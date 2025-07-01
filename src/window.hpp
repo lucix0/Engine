@@ -12,6 +12,9 @@ namespace Engine {
 		void SetVSync(bool flag);
 		void SetMouseCaptured(bool flag);
 
+		bool GetVSync();
+		bool GetMouseCaptured();
+
 		void SetCursorPosCallback(GLFWcursorposfun callback);
 		void SetScrollCallback(GLFWscrollfun callback);
 

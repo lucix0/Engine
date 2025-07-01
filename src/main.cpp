@@ -4,6 +4,10 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+#include <imgui.h>
+#include <backends/imgui_impl_glfw.h>
+#include <backends/imgui_impl_opengl3.h>
+
 #include <glm/vec3.hpp>
 #include <glm/mat4x4.hpp>
 #include <glm/trigonometric.hpp>
@@ -19,31 +23,8 @@
 #include "model.hpp"
 #include "window.hpp"
 
-void mouse_callback(GLFWwindow* window, double xposIn, double yposIn);
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
-void processInput(GLFWwindow* window);
-
-const unsigned int SCR_WIDTH = 1280;
-const unsigned int SCR_HEIGHT = 720;
-
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
-float lastX = SCR_WIDTH / 2.0f;
-float lastY = SCR_HEIGHT / 2.0f;
-bool firstMouse = true;
-
-float deltaTime = 0.0f;
-float lastFrame = 0.0f;
-
 int main(int argc, char **argv) {
-	Engine::GLWindow win("Editor", 1280, 720, true);
 
-	win.SetMouseCaptured(true);
-
-	win.SetCursorPosCallback(mouse_callback);
-	win.SetScrollCallback(scroll_callback);
-
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_CULL_FACE);
 
 	Shader objectShader("resources/shaders/ObjectVertex.glsl", "resources/shaders/ObjectFragment.glsl");
 
@@ -51,13 +32,11 @@ int main(int argc, char **argv) {
 
 	Model testModel("resources/models/backpack.obj");
 
+	ImGui::CreateContext();
+	ImGui_ImplGlfw_InitForOpenGL(win.GetWindowHandle(), true);
+	ImGui_ImplOpenGL3_Init("#version 460");
+
 	while (!glfwWindowShouldClose(win.GetWindowHandle())) {
-		float currentFrame = static_cast<float>(glfwGetTime());
-		deltaTime = currentFrame - lastFrame;
-		lastFrame = currentFrame;
-
-		processInput(win.GetWindowHandle());
-
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -81,47 +60,22 @@ int main(int argc, char **argv) {
 
 		testModel.Draw(objectShader);
 
+		ImGui_ImplOpenGL3_NewFrame();
+		ImGui_ImplGlfw_NewFrame();
+		ImGui::NewFrame();
+
+		bool demo = true;
+		ImGui::ShowDemoWindow(&demo);
+
+		ImGui::Render();
+		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
 		glfwSwapBuffers(win.GetWindowHandle());
 		glfwPollEvents();
 	}
 
+	ImGui_ImplOpenGL3_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
+	ImGui::DestroyContext();
 	return 0;
-}
-
-void mouse_callback(GLFWwindow* window, double xposIn, double yposIn) {
-	float xpos = static_cast<float>(xposIn);
-	float ypos = static_cast<float>(yposIn);
-
-	if (firstMouse)
-	{
-		lastX = xpos;
-		lastY = ypos;
-		firstMouse = false;
-	}
-
-	float xoffset = xpos - lastX;
-	float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
-
-	lastX = xpos;
-	lastY = ypos;
-
-	camera.ProcessMouseMovement(xoffset, yoffset);
-}
-
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
-	camera.ProcessMouseScroll(static_cast<float>(yoffset));
-}
-
-void processInput(GLFWwindow* window) {
-	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-		glfwSetWindowShouldClose(window, true);
-
-	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-		camera.ProcessKeyboard(FORWARD, deltaTime);
-	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-		camera.ProcessKeyboard(BACKWARD, deltaTime);
-	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-		camera.ProcessKeyboard(LEFT, deltaTime);
-	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-		camera.ProcessKeyboard(RIGHT, deltaTime);
 }
