@@ -53,14 +53,6 @@ namespace Engine {
 			glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	}
 
-	bool GLWindow::GetVSync() {
-		return m_VSync;
-	}
-
-	bool GLWindow::GetMouseCaptured() {
-		return m_MouseCaptured;
-	}
-
 	void GLWindow::SetCursorPosCallback(GLFWcursorposfun callback) {
 		glfwSetCursorPosCallback(m_Window, callback);
 	}
