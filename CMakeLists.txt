@@ -25,6 +25,6 @@ add_executable(Engine
         src/glad.c
         src/main.cpp
         src/shader.cpp
- "src/camera.cpp" "src/mesh.cpp" "src/model.cpp" "src/scene.hpp" "src/scene.cpp" "src/window.cpp")
+ "src/camera.cpp" "src/mesh.cpp" "src/model.cpp" "src/scene.hpp"  "src/window.cpp")
 
 target_link_libraries(Engine PRIVATE bgfx glfw assimp)

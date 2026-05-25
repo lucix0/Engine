@@ -2,6 +2,7 @@
 #include <glm/glm.hpp>
 #include <string>
 #include <vector>
+#include <bgfx/bgfx.h>			
 #include "shader.hpp"
 
 struct Vertex {
@@ -25,7 +26,8 @@ public:
 	Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures);
 	void Draw(Shader& shader);
 private:
-	unsigned int VAO, VBO, EBO;
+	bgfx::VertexBufferHandle VBO;
+	bgfx::IndexBufferHandle EBO;
 
 	void setupMesh();
 };
