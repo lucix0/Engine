@@ -1,8 +1,20 @@
 #include <iostream>
 #include <stdio.h>
 
+#include <bgfx/bgfx.h>
+#include <bgfx/platform.h>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+
+
+#if TARGET_OS_PACIFIC || defined(_WIN32)
+#   define GLFW_EXPOSE_NATIVE_WIN32
+#elif defined(__APPLE__)
+#   define GLFW_EXPOSE_NATIVE_COCOA
+#elif defined(__linux__)
+#   define GLFW_EXPOSE_NATIVE_X11
+#endif
+#include <GLFW/glfw3native.h>
 
 #include <glm/vec3.hpp>
 #include <glm/mat4x4.hpp>
@@ -42,47 +54,49 @@ int main(int argc, char **argv) {
 	win.SetCursorPosCallback(mouse_callback);
 	win.SetScrollCallback(scroll_callback);
 
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_CULL_FACE);
-
-	Shader objectShader("resources/shaders/ObjectVertex.glsl", "resources/shaders/ObjectFragment.glsl");
+	// Shader objectShader("resources/shaders/ObjectVertex.glsl", "resources/shaders/ObjectFragment.glsl");
 
 	stbi_set_flip_vertically_on_load(true);
 
-	Model testModel("resources/models/backpack.obj");
+	// Model testModel("resources/models/backpack.obj");
 
 	while (!glfwWindowShouldClose(win.GetWindowHandle())) {
+		glfwPollEvents();
+
 		float currentFrame = static_cast<float>(glfwGetTime());
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
 
 		processInput(win.GetWindowHandle());
 
-		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		//objectShader.use();
+		//glm::mat4 view = camera.GetViewMatrix();
+		//glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+		//objectShader.setMat4("projection", projection);
+		//objectShader.setMat4("view", view);
 
-		objectShader.use();
-		glm::mat4 view = camera.GetViewMatrix();
-		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-		objectShader.setMat4("projection", projection);
-		objectShader.setMat4("view", view);
+		bgfx::touch(0);
+
+		bgfx::dbgTextClear();
+		bgfx::dbgTextPrintf(0, 0, 0x0f, "BGFX is working!");
 
 		// render the loaded model
-		glm::mat4 model = glm::mat4(1.0f);
-		model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
-		model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));
-		objectShader.setMat4("model", model);
+		//glm::mat4 model = glm::mat4(1.0f);
+		//model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
+		//model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));
+		//objectShader.setMat4("model", model);
+		//
+		//objectShader.setVec3("viewPos", camera.Position);
+		//objectShader.setVec3("dirLight.direction", -0.2f, -1.0f, -0.3f);
+		//objectShader.setVec3("dirLight.ambient", 0.05f, 0.05f, 0.05f);
+		//objectShader.setVec3("dirLight.diffuse", 0.4f, 0.4f, 0.4f);
+		//objectShader.setVec3("dirLight.specular", 0.5f, 0.5f, 0.5f);
+		//
+		//testModel.Draw(objectShader);
 
-		objectShader.setVec3("viewPos", camera.Position);
-		objectShader.setVec3("dirLight.direction", -0.2f, -1.0f, -0.3f);
-		objectShader.setVec3("dirLight.ambient", 0.05f, 0.05f, 0.05f);
-		objectShader.setVec3("dirLight.diffuse", 0.4f, 0.4f, 0.4f);
-		objectShader.setVec3("dirLight.specular", 0.5f, 0.5f, 0.5f);
+		bgfx::setDebug(BGFX_DEBUG_TEXT);
 
-		testModel.Draw(objectShader);
-
-		glfwSwapBuffers(win.GetWindowHandle());
-		glfwPollEvents();
+		bgfx::frame();
 	}
 
 	return 0;
