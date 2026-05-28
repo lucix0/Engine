@@ -25,6 +25,23 @@ add_executable(Engine
         src/glad.c
         src/main.cpp
         src/shader.cpp
- "src/camera.cpp" "src/mesh.cpp" "src/model.cpp" "src/scene.hpp"  "src/window.cpp")
+        src/camera.cpp
+        src/mesh.cpp
+        src/model.cpp
+        src/window.cpp)
+
+bgfx_compile_shaders(
+        TYPE VERTEX
+        SHADERS ${CMAKE_CURRENT_SOURCE_DIR}/resources/shaders/src/ObjectVertex.sc
+        VARYING_DEF ${CMAKE_CURRENT_SOURCE_DIR}/resources/shaders/src/varying.def.sc
+        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/shaders/
+)
+
+bgfx_compile_shaders(
+        TYPE FRAGMENT
+        SHADERS ${CMAKE_CURRENT_SOURCE_DIR}/resources/shaders/src/ObjectFragment.sc
+        VARYING_DEF ${CMAKE_CURRENT_SOURCE_DIR}/resources/shaders/src/varying.def.sc
+        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/shaders/
+)
 
 target_link_libraries(Engine PRIVATE bgfx glfw assimp)
