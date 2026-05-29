@@ -22,13 +22,15 @@ add_subdirectory(vendor/entt)
 include_directories(vendor/include vendor/assimp/include vendor/entt/single_include)
 
 add_executable(Engine
-        src/glad.c
         src/main.cpp
         src/shader.cpp
         src/camera.cpp
         src/mesh.cpp
         src/model.cpp
-        src/window.cpp)
+        src/window.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/resources/shaders/src/ObjectVertex.sc
+        ${CMAKE_CURRENT_SOURCE_DIR}/resources/shaders/src/ObjectFragment.sc
+)
 
 bgfx_compile_shaders(
         TYPE VERTEX

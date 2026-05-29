@@ -54,11 +54,11 @@ int main(int argc, char **argv) {
 	win.SetCursorPosCallback(mouse_callback);
 	win.SetScrollCallback(scroll_callback);
 
-	// Shader objectShader("resources/shaders/ObjectVertex.glsl", "resources/shaders/ObjectFragment.glsl");
+	Shader objectShader("resources/shaders/src/ObjectVertex.sc", "resources/shaders/src/ObjectFragment.sc");
 
 	stbi_set_flip_vertically_on_load(true);
 
-	// Model testModel("resources/models/backpack.obj");
+	Model testModel("resources/models/backpack.obj");
 
 	while (!glfwWindowShouldClose(win.GetWindowHandle())) {
 		glfwPollEvents();
@@ -69,11 +69,9 @@ int main(int argc, char **argv) {
 
 		processInput(win.GetWindowHandle());
 
-		//objectShader.use();
-		//glm::mat4 view = camera.GetViewMatrix();
-		//glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-		//objectShader.setMat4("projection", projection);
-		//objectShader.setMat4("view", view);
+		glm::mat4 view = camera.GetViewMatrix();
+		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+		bgfx::setViewTransform(0, &view, &projection);
 
 		bgfx::touch(0);
 
@@ -84,15 +82,10 @@ int main(int argc, char **argv) {
 		glm::mat4 model = glm::mat4(1.0f);
 		model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
 		model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));
-		bgfx::
-		//
-		//objectShader.setVec3("viewPos", camera.Position);
-		//objectShader.setVec3("dirLight.direction", -0.2f, -1.0f, -0.3f);
-		//objectShader.setVec3("dirLight.ambient", 0.05f, 0.05f, 0.05f);
-		//objectShader.setVec3("dirLight.diffuse", 0.4f, 0.4f, 0.4f);
-		//objectShader.setVec3("dirLight.specular", 0.5f, 0.5f, 0.5f);
-		//
-		//testModel.Draw(objectShader);
+		
+		bgfx::setTransform(&model);
+
+		testModel.Draw(objectShader);
 
 		bgfx::setDebug(BGFX_DEBUG_TEXT);
 

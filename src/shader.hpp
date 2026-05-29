@@ -8,5 +8,4 @@ public:
 	bgfx::ProgramHandle ID;
 
 	Shader(const std::string &vertexPath, const std::string &fragmentPath);
-	void use();
 };

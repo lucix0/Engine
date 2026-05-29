@@ -42,7 +42,3 @@ Shader::Shader(const std::string& vertexPath, const std::string& fragmentPath) {
 	delete[] vMem;
 	delete[] fMem;
 }
-
-void Shader::use() {
-	glUseProgram(ID);
-}
